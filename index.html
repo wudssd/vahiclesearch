@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแสดงข้อมูลรถที่ขึ้นทะเบียน</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 for notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-image: linear-gradient(to br, #4f46e5, #a855f7); /* สีน้ำเงินม่วงเข้มไล่สี */
+        }
+        /* Custom styles for modal scrollbar */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Main Title -->
+        <header class="text-center my-8 md:my-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-white shadow-lg">ระบบแสดงข้อมูลรถที่ขึ้นทะเบียน</h1>
+        </header>
+
+        <!-- Search Card -->
+        <main>
+            <div class="max-w-2xl mx-auto bg-white/95 backdrop-blur-sm p-6 md:p-8 rounded-2xl shadow-2xl">
+                <form id="searchForm">
+                    <div class="mb-4">
+                        <label for="searchType" class="block text-gray-700 text-sm font-bold mb-2">ค้นหาจาก:</label>
+                        <select id="searchType" name="searchType" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-indigo-500">
+                            <option value="studentId">รหัสนักศึกษา</option>
+                            <option value="licensePlate">เลขทะเบียนรถ</option>
+                            <option value="brand">ยี่ห้อรถ</option>
+                            <option value="evSticker">เลขสติกเกอร์รถ EV</option>
+                            <option value="gasSticker">เลขสติกเกอร์รถยนต์น้ำมัน</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label for="searchValue" class="block text-gray-700 text-sm font-bold mb-2">คำค้นหา:</label>
+                        <input type="text" id="searchValue" name="searchValue" class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-indigo-500" placeholder="กรอกข้อมูลเพื่อค้นหา..." required>
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg focus:outline-none focus:shadow-outline transition-transform transform hover:scale-105 w-full md:w-auto">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                            </svg>
+                            ค้นหาข้อมูล
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results" class="mt-8">
+                <!-- Search results will be injected here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Details Modal -->
+    <div id="detailModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-xl font-bold text-gray-800">รายละเอียดข้อมูล</h3>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto modal-body">
+                <!-- Modal content will be injected here -->
+                <div id="modalContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm"></div>
+                <h4 class="text-lg font-semibold mt-6 mb-4">รูปภาพรถ</h4>
+                <div id="modalImages" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // !!! IMPORTANT !!!
+        // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
+        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+
+        const searchForm = document.getElementById('searchForm');
+        const resultsDiv = document.getElementById('results');
+        const modal = document.getElementById('detailModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const modalContent = document.getElementById('modalContent');
+        const modalImages = document.getElementById('modalImages');
+
+        // This function will be called by the JSONP response from Google Apps Script
+        function handleResponse(data) {
+            Swal.close();
+            resultsDiv.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'ไม่พบข้อมูล',
+                    text: 'ไม่มีข้อมูลที่คุณค้นหาในระบบ',
+                    confirmButtonColor: '#4f46e5'
+                });
+                return;
+            }
+
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white/90 backdrop-blur-sm p-5 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300';
+                
+                let initialInfo = '';
+                const searchType = document.getElementById('searchType').value;
+
+                // Display relevant info based on search type
+                 switch(searchType) {
+                    case 'studentId':
+                        initialInfo = `<p><strong>รหัสนักศึกษา:</strong> ${item.studentId || 'N/A'}</p><p><strong>ชื่อ-สกุล:</strong> ${item.name || 'N/A'}</p>`;
+                        break;
+                    case 'licensePlate':
+                        initialInfo = `<p><strong>เลขทะเบียนรถ:</strong> ${item.licensePlate || 'N/A'}</p><p><strong>ยี่ห้อ:</strong> ${item.brand || 'N/A'}</p><p><strong>รุ่น:</strong> ${item.model || 'N/A'}</p>`;
+                        break;
+                    case 'brand':
+                        initialInfo = `<p><strong>ยี่ห้อรถ:</strong> ${item.brand || 'N/A'}</p><p><strong>รุ่น:</strong> ${item.model || 'N/A'}</p><p><strong>เลขทะเบียน:</strong> ${item.licensePlate || 'N/A'}</p>`;
+                        break;
+                    case 'evSticker':
+                        initialInfo = `<p><strong>เลขสติกเกอร์ EV:</strong> ${item.evSticker || 'N/A'}</p><p><strong>ชื่อ-สกุล:</strong> ${item.name || 'N/A'}</p>`;
+                        break;
+                    case 'gasSticker':
+                        initialInfo = `<p><strong>เลขสติกเกอร์รถยนต์น้ำมัน:</strong> ${item.gasSticker || 'N/A'}</p><p><strong>ชื่อ-สกุล:</strong> ${item.name || 'N/A'}</p>`;
+                        break;
+                }
+
+                card.innerHTML = `
+                    <div class="text-gray-700">${initialInfo}</div>
+                    <div class="mt-4 text-right">
+                        <button class="details-btn bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-transform transform hover:scale-105">
+                            คลิกดูรายละเอียด
+                        </button>
+                    </div>
+                `;
+                
+                // Add event listener to the detail button
+                card.querySelector('.details-btn').addEventListener('click', () => {
+                    displayModal(item);
+                });
+
+                grid.appendChild(card);
+            });
+            resultsDiv.appendChild(grid);
+        }
+
+        // Handle form submission
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const searchType = document.getElementById('searchType').value;
+            const searchValue = document.getElementById('searchValue').value.trim();
+
+            if (!searchValue) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณากรอกข้อมูล',
+                    text: 'กรุณากรอกคำค้นหาเพื่อดำเนินการต่อ',
+                    confirmButtonColor: '#4f46e5'
+                });
+                return;
+            }
+
+            if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                 Swal.fire({
+                    icon: 'error',
+                    title: 'ตั้งค่าไม่สำเร็จ',
+                    text: 'กรุณาใส่ URL ของ Google Apps Script ในไฟล์ HTML ก่อนใช้งาน',
+                    confirmButtonColor: '#d33'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'กำลังค้นหาข้อมูล...',
+                text: 'กรุณารอสักครู่',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Use JSONP to make a cross-origin request
+            const script = document.createElement('script');
+            const url = `${SCRIPT_URL}?callback=handleResponse&searchType=${encodeURIComponent(searchType)}&searchValue=${encodeURIComponent(searchValue)}`;
+            script.src = https://script.google.com/macros/s/AKfycbxFWXi0UH5CJUAum62jgVMcLyhv4IKdPQpPXJoZD9pICv4H_8KUekwLj74QWEqYI1NRNg/exec;
+            document.body.appendChild(script);
+
+            // Clean up the script tag after it has been loaded
+            script.onload = () => {
+                document.body.removeChild(script);
+            };
+            script.onerror = () => {
+                 document.body.removeChild(script);
+                 Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบ URL ของ Apps Script และการตั้งค่าการเข้าถึง',
+                    confirmButtonColor: '#d33'
+                });
+            }
+        });
+
+        // Function to display data in the modal
+        function displayModal(item) {
+            modalContent.innerHTML = `
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">รหัสนักศึกษา, ชื่อ-สกุล:</strong><br>${item.studentIdName || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">สำนักวิชา:</strong><br>${item.school || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">เบอร์โทรศัพท์:</strong><br>${item.phone || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">ที่พักปัจจุบัน:</strong><br>${item.residence || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">ผู้ติดต่อกรณีฉุกเฉิน:</strong><br>${item.emergencyContact || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">เบอร์โทรศัพท์ฉุกเฉิน:</strong><br>${item.emergencyPhone || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">ประเภทรถ:</strong><br>${item.vehicleType || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">ยี่ห้อรถ:</strong><br>${item.brand || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">รุ่นรถ:</strong><br>${item.model || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">เลขทะเบียนรถ:</strong><br>${item.licensePlate || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">สีรถ:</strong><br>${item.color || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg"><strong class="text-gray-600">เลขสติกเกอร์รถ EV:</strong><br>${item.evSticker || ' - '}</div>
+                <div class="p-2 bg-gray-100 rounded-lg col-span-1 md:col-span-2"><strong class="text-gray-600">เลขสติกเกอร์รถยนต์น้ำมัน:</strong><br>${item.gasSticker || ' - '}</div>
+            `;
+
+            modalImages.innerHTML = '';
+            const images = [item.imgFront, item.imgBack, item.imgLeft, item.imgRight];
+            const labels = ['รูปด้านหน้า', 'รูปด้านหลัง', 'รูปด้านซ้าย', 'รูปด้านขวา'];
+            
+            images.forEach((imgUrl, index) => {
+                if (imgUrl) {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'text-center';
+                    imgContainer.innerHTML = `
+                        <a href="${imgUrl}" target="_blank">
+                            <img src="${imgUrl}" alt="${labels[index]}" class="w-full h-32 object-cover rounded-lg shadow-md border-2 border-gray-200 hover:border-indigo-500 transition-all">
+                        </a>
+                        <p class="text-xs mt-1 text-gray-600">${labels[index]}</p>
+                    `;
+                    modalImages.appendChild(imgContainer);
+                }
+            });
+
+            modal.classList.remove('hidden');
+        }
+
+        // Close modal functionality
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+        // Close modal when clicking outside of it
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape" && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
