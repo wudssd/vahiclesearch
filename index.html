@@ -96,7 +96,7 @@
     <script>
         // !!! IMPORTANT !!!
         // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
-        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxFWXi0UH5CJUAum62jgVMcLyhv4IKdPQpPXJoZD9pICv4H_8KUekwLj74QWEqYI1NRNg/exec';
 
         const searchForm = document.getElementById('searchForm');
         const resultsDiv = document.getElementById('results');
@@ -109,6 +109,16 @@
         function handleResponse(data) {
             Swal.close();
             resultsDiv.innerHTML = '';
+
+            if (data.error) {
+                 Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาดจาก Server',
+                    text: data.message,
+                    confirmButtonColor: '#d33'
+                });
+                return;
+            }
 
             if (!data || data.length === 0) {
                 Swal.fire({
@@ -184,16 +194,6 @@
                 return;
             }
 
-            if (SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-                 Swal.fire({
-                    icon: 'error',
-                    title: 'ตั้งค่าไม่สำเร็จ',
-                    text: 'กรุณาใส่ URL ของ Google Apps Script ในไฟล์ HTML ก่อนใช้งาน',
-                    confirmButtonColor: '#d33'
-                });
-                return;
-            }
-
             Swal.fire({
                 title: 'กำลังค้นหาข้อมูล...',
                 text: 'กรุณารอสักครู่',
@@ -206,7 +206,7 @@
             // Use JSONP to make a cross-origin request
             const script = document.createElement('script');
             const url = `${SCRIPT_URL}?callback=handleResponse&searchType=${encodeURIComponent(searchType)}&searchValue=${encodeURIComponent(searchValue)}`;
-            script.src = https://script.google.com/macros/s/AKfycbxFWXi0UH5CJUAum62jgVMcLyhv4IKdPQpPXJoZD9pICv4H_8KUekwLj74QWEqYI1NRNg/exec;
+            script.src = url;
             document.body.appendChild(script);
 
             // Clean up the script tag after it has been loaded
@@ -252,7 +252,7 @@
                     imgContainer.className = 'text-center';
                     imgContainer.innerHTML = `
                         <a href="${imgUrl}" target="_blank">
-                            <img src="${imgUrl}" alt="${labels[index]}" class="w-full h-32 object-cover rounded-lg shadow-md border-2 border-gray-200 hover:border-indigo-500 transition-all">
+                            <img src="${imgUrl}" alt="${labels[index]}" class="w-full h-32 object-cover rounded-lg shadow-md border-2 border-gray-200 hover:border-indigo-500 transition-all" onerror="this.onerror=null;this.src='https://placehold.co/400x300/e2e8f0/94a3b8?text=Image+Not+Found';">
                         </a>
                         <p class="text-xs mt-1 text-gray-600">${labels[index]}</p>
                     `;
