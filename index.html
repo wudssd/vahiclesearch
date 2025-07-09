@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบแสดงข้อมูลรถที่ขึ้นทะเบียน</title>
+    <title>ระบบค้นหารถที่ขึ้นทะเบียน 2568</title>
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SweetAlert2 for notifications -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Google Fonts: Inter -->
+    <!-- Google Fonts: Kanit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Kanit', sans-serif;
-            background-image: linear-gradient(to br, #4f46e5, #a855f7); /* สีน้ำเงินม่วงเข้มไล่สี */
+            background-image: linear-gradient(to br, #a5b4fc, #d8b4fe); /* ไล่สีโทนสว่างขึ้น */
         }
         /* Custom styles for modal scrollbar */
         .modal-body::-webkit-scrollbar {
@@ -36,9 +36,13 @@
 <body class="min-h-screen text-gray-800">
 
     <div class="container mx-auto p-4 md:p-8">
-        <!-- Main Title -->
-        <header class="text-center my-8 md:my-12">
-            <h1 class="text-4xl md:text-5xl font-bold text-white shadow-lg">ระบบแสดงข้อมูลรถที่ขึ้นทะเบียน</h1>
+        <!-- Main Title - Updated Header -->
+        <header class="my-8 md:my-12">
+            <div class="max-w-3xl mx-auto text-center bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl">
+                <img src="https://www.wu.ac.th/uploads/logoWU_1631668089.png" alt="โลโก้มหาวิทยาลัยวลัยลักษณ์" class="h-20 md:h-24 mb-6 mx-auto">
+                <h1 class="text-3xl md:text-4xl font-bold text-indigo-900">ระบบค้นหารถที่ขึ้นทะเบียน 2568</h1>
+                <p class="text-lg md:text-xl text-gray-700 mt-2">ส่วนส่งเสริมและพัฒนานักศึกษา ม.วลัยลักษณ์</p>
+            </div>
         </header>
 
         <!-- Search Card -->
@@ -94,8 +98,7 @@
     </div>
 
     <script>
-        // !!! IMPORTANT !!!
-        // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
+        // URL ของ Google Apps Script ที่คุณใช้งาน
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxFWXi0UH5CJUAum62jgVMcLyhv4IKdPQpPXJoZD9pICv4H_8KUekwLj74QWEqYI1NRNg/exec';
 
         const searchForm = document.getElementById('searchForm');
